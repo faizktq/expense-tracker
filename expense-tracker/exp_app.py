@@ -10,7 +10,7 @@ def init_database():
     cursor = conn.cursor()
     
     # Create expenses table
-    cursor.execute('''
+    cursor.execute(''' 
         CREATE TABLE IF NOT EXISTS expenses (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             amount REAL NOT NULL,
@@ -21,15 +21,15 @@ def init_database():
     ''')
     
     # Create budget table
-    cursor.execute('''
+    cursor.execute(''' 
         CREATE TABLE IF NOT EXISTS budgets (
             category TEXT PRIMARY KEY,
             budget_amount REAL NOT NULL
         )
     ''')
-
+    
     # Create a total budget table
-    cursor.execute('''
+    cursor.execute(''' 
         CREATE TABLE IF NOT EXISTS total_budget (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             budget_amount REAL NOT NULL
@@ -57,9 +57,7 @@ def set_budget(conn, cursor, category, budget_amount):
 
 # Set Total Budget
 def set_total_budget(conn, cursor, budget_amount):
-    cursor.execute('''
-        DELETE FROM total_budget
-    ''')
+    cursor.execute('''DELETE FROM total_budget''')
     cursor.execute('''
         INSERT INTO total_budget (budget_amount) 
         VALUES (?)
@@ -102,6 +100,12 @@ def delete_budget(conn, cursor, category):
     cursor.execute('DELETE FROM budgets WHERE category = ?', (category,))
     conn.commit()
 
+# Export Data to CSV
+def export_expenses_to_csv(cursor):
+    cursor.execute('SELECT * FROM expenses ORDER BY date DESC')
+    expenses_df = pd.DataFrame(cursor.fetchall(), columns=['ID', 'Amount', 'Category', 'Description', 'Date'])
+    return expenses_df.to_csv(index=False)
+
 # Main Streamlit App
 def main():
     st.title("💰 Expense Tracker")
@@ -110,7 +114,7 @@ def main():
     conn, cursor = init_database()
     
     # Sidebar Navigation
-    menu = ["Add Expense", "Expense Report", "Budget Management", "Visualizations"]
+    menu = ["Add Expense", "Expense Report", "Budget Management", "Visualizations", "Export Data"]
     choice = st.sidebar.selectbox("Menu", menu)
     
     # Add Expense Section
@@ -155,15 +159,16 @@ def main():
         total_expenses = get_total_expenses(cursor)
         st.metric("Total Expenses", f"₹{total_expenses:.2f}")
         
-        # Expense table with delete button
+        # Show expense table
         if not expenses_df.empty:
-            for _, row in expenses_df.iterrows():
-                col1, col2, col3, col4, col5 = st.columns([1, 2, 2, 4, 1])
-                col1.text(row['ID'])
+            # Display expenses in table format with a delete button
+            for index, row in expenses_df.iterrows():
+                col1, col2, col3, col4 = st.columns([3, 2, 2, 1])
+                col1.text(f"₹{row['Amount']}")
                 col2.text(row['Category'])
-                col3.text(f"₹{row['Amount']:.2f}")
-                col4.text(row['Description'])
-                if col5.button("Delete", key=row['ID']):
+                col3.text(row['Description'])
+                col4.text(row['Date'])
+                if col4.button("Delete", key=row['ID']):
                     delete_expense(conn, cursor, row['ID'])
                     st.experimental_rerun()
         else:
@@ -249,6 +254,17 @@ def main():
         ax2.legend()
         
         st.pyplot(fig2)
+
+    # Export Data Section
+    elif choice == "Export Data":
+        st.subheader("Export Expense Data")
+        csv_file = export_expenses_to_csv(cursor)
+        st.download_button(
+            label="Download Expense Data",
+            data=csv_file,
+            file_name="expenses.csv",
+            mime="text/csv"
+        )
     
     # Close database connection
     conn.close()
