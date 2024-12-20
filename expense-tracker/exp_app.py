@@ -77,7 +77,7 @@ def get_total_expenses(cursor):
 
 # Get Expenses by Category
 def get_expenses_by_category(cursor):
-    cursor.execute('''
+    cursor.execute(''' 
         SELECT category, SUM(amount) as total_amount 
         FROM expenses 
         GROUP BY category
@@ -254,6 +254,18 @@ def main():
         ax2.legend()
         
         st.pyplot(fig2)
+
+        # Bar Chart for Total Budget vs Total Expenses
+        st.write("### Total Budget vs Total Expenses")
+        total_budget = get_total_budget(cursor)
+        total_expenses = get_total_expenses(cursor)
+        
+        fig3, ax3 = plt.subplots(figsize=(6, 4))
+        ax3.bar(['Total Budget', 'Total Expenses'], [total_budget, total_expenses], color=['green', 'red'])
+        ax3.set_ylabel('Amount (₹)')
+        ax3.set_title('Total Budget vs Total Expenses')
+        
+        st.pyplot(fig3)
 
     # Export Data Section
     elif choice == "Export Data":
