@@ -159,7 +159,7 @@ def main():
             if st.button("Delete Selected Expense"):
                 delete_expense(conn, cursor, delete_id)
                 st.success(f"Expense ID {delete_id} deleted!")
-                st.experimental_rerun()
+                st.rerun()
         else:
             st.info("No expenses found.")
 
@@ -266,3 +266,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
